@@ -1,0 +1,1494 @@
+= Creating df_toronto dataframe from website
+
+==== Importing table from Wikipedia and converting to DF
+
+
++*In[27]:*+
+[source, ipython3]
+----
+import pandas as pd
+----
+
+
++*In[28]:*+
+[source, ipython3]
+----
+df = pd.read_html('https://en.wikipedia.org/wiki/List_of_postal_codes_of_Canada:_M')
+----
+
+
++*In[29]:*+
+[source, ipython3]
+----
+type(df)
+----
+
+
++*Out[29]:*+
+----list----
+
+
++*In[30]:*+
+[source, ipython3]
+----
+len(df)
+----
+
+
++*Out[30]:*+
+----3----
+
+
++*In[31]:*+
+[source, ipython3]
+----
+df_tor = df[0]
+----
+
+
++*In[32]:*+
+[source, ipython3]
+----
+df_tor.head(10)
+----
+
+
++*Out[32]:*+
+----
+[cols=",,,",options="header",]
+|======================================
+| |Postcode |Borough |Neighbourhood
+|0 |M1A |Not assigned |Not assigned
+|1 |M2A |Not assigned |Not assigned
+|2 |M3A |North York |Parkwoods
+|3 |M4A |North York |Victoria Village
+|4 |M5A |Downtown Toronto |Harbourfront
+|5 |M6A |North York |Lawrence Heights
+|6 |M6A |North York |Lawrence Manor
+|7 |M7A |Downtown Toronto |Queen's Park
+|8 |M8A |Not assigned |Not assigned
+|9 |M9A |Queen's Park |Not assigned
+|======================================
+----
+
+==== Fixing row 9 as stated in instructions
+
+
++*In[33]:*+
+[source, ipython3]
+----
+df_tor.iloc[9,2] = "Queen's Park"
+df_tor.head(10)
+----
+
+
++*Out[33]:*+
+----
+[cols=",,,",options="header",]
+|======================================
+| |Postcode |Borough |Neighbourhood
+|0 |M1A |Not assigned |Not assigned
+|1 |M2A |Not assigned |Not assigned
+|2 |M3A |North York |Parkwoods
+|3 |M4A |North York |Victoria Village
+|4 |M5A |Downtown Toronto |Harbourfront
+|5 |M6A |North York |Lawrence Heights
+|6 |M6A |North York |Lawrence Manor
+|7 |M7A |Downtown Toronto |Queen's Park
+|8 |M8A |Not assigned |Not assigned
+|9 |M9A |Queen's Park |Queen's Park
+|======================================
+----
+
+==== Verifying no other rows have Neighbourhood of Not Assigned with an
+assigned Borough
+
+
++*In[34]:*+
+[source, ipython3]
+----
+df_not = df_tor[df_tor['Neighbourhood'].str.contains("Not assigned")]
+df_not
+----
+
+
++*Out[34]:*+
+----
+[cols=",,,",options="header",]
+|====================================
+| |Postcode |Borough |Neighbourhood
+|0 |M1A |Not assigned |Not assigned
+|1 |M2A |Not assigned |Not assigned
+|8 |M8A |Not assigned |Not assigned
+|12 |M2B |Not assigned |Not assigned
+|19 |M7B |Not assigned |Not assigned
+|... |... |... |...
+|277 |M4Z |Not assigned |Not assigned
+|278 |M5Z |Not assigned |Not assigned
+|279 |M6Z |Not assigned |Not assigned
+|280 |M7Z |Not assigned |Not assigned
+|286 |M9Z |Not assigned |Not assigned
+|====================================
+
+77 rows × 3 columns
+----
+
+
++*In[35]:*+
+[source, ipython3]
+----
+df_notnot = df_not[~df_not['Borough'].str.contains("Not assigned")]
+df_notnot
+----
+
+
++*Out[35]:*+
+----
+[cols=",,,",options="header",]
+|==================================
+| |Postcode |Borough |Neighbourhood
+|==================================
+----
+
+==== Cleaning up dataframe by removing `Not Assigned' Boroughs and
+
+
++*In[36]:*+
+[source, ipython3]
+----
+df_tor.describe
+----
+
+
++*Out[36]:*+
+----<bound method NDFrame.describe of     Postcode           Borough          Neighbourhood
+0        M1A      Not assigned           Not assigned
+1        M2A      Not assigned           Not assigned
+2        M3A        North York              Parkwoods
+3        M4A        North York       Victoria Village
+4        M5A  Downtown Toronto           Harbourfront
+..       ...               ...                    ...
+282      M8Z         Etobicoke              Mimico NW
+283      M8Z         Etobicoke     The Queensway West
+284      M8Z         Etobicoke  Royal York South West
+285      M8Z         Etobicoke         South of Bloor
+286      M9Z      Not assigned           Not assigned
+
+[287 rows x 3 columns]>----
+
+
++*In[37]:*+
+[source, ipython3]
+----
+df_tor.shape
+----
+
+
++*Out[37]:*+
+----(287, 3)----
+
+
++*In[39]:*+
+[source, ipython3]
+----
+df_tor2 = df_tor[df_tor.Borough != 'Not assigned']
+df_tor2.shape
+----
+
+
++*Out[39]:*+
+----(210, 3)----
+
+
++*In[40]:*+
+[source, ipython3]
+----
+df_tor2.head(10)
+----
+
+
++*Out[40]:*+
+----
+[cols=",,,",options="header",]
+|======================================
+| |Postcode |Borough |Neighbourhood
+|2 |M3A |North York |Parkwoods
+|3 |M4A |North York |Victoria Village
+|4 |M5A |Downtown Toronto |Harbourfront
+|5 |M6A |North York |Lawrence Heights
+|6 |M6A |North York |Lawrence Manor
+|7 |M7A |Downtown Toronto |Queen's Park
+|9 |M9A |Queen's Park |Queen's Park
+|10 |M1B |Scarborough |Rouge
+|11 |M1B |Scarborough |Malvern
+|13 |M3B |North York |Don Mills North
+|======================================
+----
+
+==== Grouping Neighbourhoods into unique Poscode/Borough combinations
+
+
++*In[41]:*+
+[source, ipython3]
+----
+df_toronto = df_tor2.groupby(['Postcode','Borough'], as_index = False).agg({'Neighbourhood': ', '.join})
+----
+
+
++*In[42]:*+
+[source, ipython3]
+----
+print(df_toronto.shape)
+df_toronto
+----
+
+
++*Out[42]:*+
+----
+(103, 3)
+
+[cols=",,,",options="header",]
+|======================================================================
+| |Postcode |Borough |Neighbourhood
+|0 |M1B |Scarborough |Rouge, Malvern
+|1 |M1C |Scarborough |Highland Creek, Rouge Hill, Port Union
+|2 |M1E |Scarborough |Guildwood, Morningside, West Hill
+|3 |M1G |Scarborough |Woburn
+|4 |M1H |Scarborough |Cedarbrae
+|... |... |... |...
+|98 |M9N |York |Weston
+|99 |M9P |Etobicoke |Westmount
+|100 |M9R |Etobicoke |Kingsview Village, Martin Grove Gardens, Richv...
+|101 |M9V |Etobicoke |Albion Gardens, Beaumond Heights, Humbergate, ...
+|102 |M9W |Etobicoke |Northwest
+|======================================================================
+
+103 rows × 3 columns
+----
+
+==== Importing Lat/Long file
+
+
++*In[45]:*+
+[source, ipython3]
+----
+df_latlong = pd.read_csv('http://cocl.us/Geospatial_data')
+df_latlong.head(15)
+----
+
+
++*Out[45]:*+
+----
+[cols=",,,",options="header",]
+|==================================
+| |Postal Code |Latitude |Longitude
+|0 |M1B |43.806686 |-79.194353
+|1 |M1C |43.784535 |-79.160497
+|2 |M1E |43.763573 |-79.188711
+|3 |M1G |43.770992 |-79.216917
+|4 |M1H |43.773136 |-79.239476
+|5 |M1J |43.744734 |-79.239476
+|6 |M1K |43.727929 |-79.262029
+|7 |M1L |43.711112 |-79.284577
+|8 |M1M |43.716316 |-79.239476
+|9 |M1N |43.692657 |-79.264848
+|10 |M1P |43.757410 |-79.273304
+|11 |M1R |43.750072 |-79.295849
+|12 |M1S |43.794200 |-79.262029
+|13 |M1T |43.781638 |-79.304302
+|14 |M1V |43.815252 |-79.284577
+|==================================
+----
+
+==== Merging Lat/Long to Toronto DF and removing extra column
+
+
++*In[46]:*+
+[source, ipython3]
+----
+df_torlatlong = df_toronto.merge(df_latlong, left_on='Postcode', right_on='Postal Code')
+df_torlatlong.head()
+----
+
+
++*Out[46]:*+
+----
+[cols=",,,,,,",options="header",]
+|=======================================================================
+| |Postcode |Borough |Neighbourhood |Postal Code |Latitude |Longitude
+|0 |M1B |Scarborough |Rouge, Malvern |M1B |43.806686 |-79.194353
+
+|1 |M1C |Scarborough |Highland Creek, Rouge Hill, Port Union |M1C
+|43.784535 |-79.160497
+
+|2 |M1E |Scarborough |Guildwood, Morningside, West Hill |M1E |43.763573
+|-79.188711
+
+|3 |M1G |Scarborough |Woburn |M1G |43.770992 |-79.216917
+
+|4 |M1H |Scarborough |Cedarbrae |M1H |43.773136 |-79.239476
+|=======================================================================
+----
+
+
++*In[47]:*+
+[source, ipython3]
+----
+df_torlatlong.drop('Postal Code', inplace=True,axis=1)
+df_torlatlong
+----
+
+
++*Out[47]:*+
+----
+[cols=",,,,,",options="header",]
+|=======================================================================
+| |Postcode |Borough |Neighbourhood |Latitude |Longitude
+|0 |M1B |Scarborough |Rouge, Malvern |43.806686 |-79.194353
+
+|1 |M1C |Scarborough |Highland Creek, Rouge Hill, Port Union |43.784535
+|-79.160497
+
+|2 |M1E |Scarborough |Guildwood, Morningside, West Hill |43.763573
+|-79.188711
+
+|3 |M1G |Scarborough |Woburn |43.770992 |-79.216917
+
+|4 |M1H |Scarborough |Cedarbrae |43.773136 |-79.239476
+
+|... |... |... |... |... |...
+
+|98 |M9N |York |Weston |43.706876 |-79.518188
+
+|99 |M9P |Etobicoke |Westmount |43.696319 |-79.532242
+
+|100 |M9R |Etobicoke |Kingsview Village, Martin Grove Gardens, Richv...
+|43.688905 |-79.554724
+
+|101 |M9V |Etobicoke |Albion Gardens, Beaumond Heights, Humbergate, ...
+|43.739416 |-79.588437
+
+|102 |M9W |Etobicoke |Northwest |43.706748 |-79.594054
+|=======================================================================
+
+103 rows × 5 columns
+----
+
+==== Importing Mapping libraries
+
+
++*In[48]:*+
+[source, ipython3]
+----
+import numpy as np
+import json
+from pandas.io.json import json_normalize
+import requests
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+from sklearn.cluster import KMeans
+!pip install folium
+import folium
+----
+
+
++*Out[48]:*+
+----
+Collecting folium
+  Downloading https://files.pythonhosted.org/packages/fd/a0/ccb3094026649cda4acd55bf2c3822bb8c277eb11446d13d384e5be35257/folium-0.10.1-py2.py3-none-any.whl (91kB)
+Collecting branca>=0.3.0 (from folium)
+  Downloading https://files.pythonhosted.org/packages/81/6d/31c83485189a2521a75b4130f1fee5364f772a0375f81afff619004e5237/branca-0.4.0-py3-none-any.whl
+Requirement already satisfied: requests in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from folium) (2.22.0)
+Requirement already satisfied: jinja2>=2.9 in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from folium) (2.10.3)
+Requirement already satisfied: numpy in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from folium) (1.16.5)
+Requirement already satisfied: six in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from branca>=0.3.0->folium) (1.12.0)
+Requirement already satisfied: urllib3!=1.25.0,!=1.25.1,<1.26,>=1.21.1 in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from requests->folium) (1.24.2)
+Requirement already satisfied: chardet<3.1.0,>=3.0.2 in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from requests->folium) (3.0.4)
+Requirement already satisfied: certifi>=2017.4.17 in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from requests->folium) (2019.9.11)
+Requirement already satisfied: idna<2.9,>=2.5 in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from requests->folium) (2.8)
+Requirement already satisfied: MarkupSafe>=0.23 in c:\users\jnettrouer\appdata\local\continuum\anaconda3\lib\site-packages (from jinja2>=2.9->folium) (1.1.1)
+Installing collected packages: branca, folium
+Successfully installed branca-0.4.0 folium-0.10.1
+----
+
+
++*In[49]:*+
+[source, ipython3]
+----
+!pip install geopy
+from geopy.geocoders import Nominatim
+----
+
+
++*Out[49]:*+
+----
+Collecting geopy
+  Downloading https://files.pythonhosted.org/packages/53/fc/3d1b47e8e82ea12c25203929efb1b964918a77067a874b2c7631e2ec35ec/geopy-1.21.0-py2.py3-none-any.whl (104kB)
+Collecting geographiclib<2,>=1.49 (from geopy)
+  Downloading https://files.pythonhosted.org/packages/8b/62/26ec95a98ba64299163199e95ad1b0e34ad3f4e176e221c40245f211e425/geographiclib-1.50-py3-none-any.whl
+Installing collected packages: geographiclib, geopy
+Successfully installed geographiclib-1.50 geopy-1.21.0
+----
+
+==== Creating 1st Map of Toronto
+
+
++*In[50]:*+
+[source, ipython3]
+----
+address = 'Toronto, ON'
+
+geolocator = Nominatim(user_agent="tor_explorer")
+location = geolocator.geocode(address)
+latitude = location.latitude
+longitude = location.longitude
+----
+
+
++*In[51]:*+
+[source, ipython3]
+----
+map_toronto = folium.Map(location=[latitude, longitude], zoom_start=10)
+neighborhoods = df_torlatlong
+
+for lat, lng, borough, neighborhood in zip(neighborhoods['Latitude'], neighborhoods['Longitude'], neighborhoods['Borough'], neighborhoods['Neighbourhood']):
+    label = '{}, {}'.format(neighborhood, borough)
+    label = folium.Popup(label, parse_html=True)
+    folium.CircleMarker(
+        [lat, lng],
+        radius=5,
+        popup=label,
+        color='blue',
+        fill=True,
+        fill_color='#3186cc',
+        fill_opacity=0.7,
+        parse_html=False).add_to(map_toronto)  
+    
+map_toronto
+----
+
+
++*Out[51]:*+
+----
+
+----
+
+==== Gathering data from Foursquare
+
+
++*In[53]:*+
+[source, ipython3]
+----
+CLIENT_ID = 'LB5FZYMLW3EKO3GDPLQICJPHT0PIM10TTYKM2CI15JANYHV0'
+CLIENT_SECRET = '420ZCLLR3JDPD1DMUTGW0NSCSXRLY53BVEKAGMOXTIHXD0SG'
+VERSION = '20180605'
+ACCESS_TOKEN = 'AUIVBHZLCFHI1JJ0FTHVF24F1QR2MLTHKAFOT5SM1LADDINK'
+----
+
+
++*In[68]:*+
+[source, ipython3]
+----
+def getNearbyVenues(names, latitudes, longitudes, radius=500, LIMIT=100):
+    
+    venues_list=[]
+    for name, lat, lng in zip(names, latitudes, longitudes):
+        print(name)
+            
+        # create the API request URL
+        url = 'https://api.foursquare.com/v2/venues/explore?&client_id={}&client_secret={}&v={}&ll={},{}&radius={}&limit={}'.format(
+            CLIENT_ID, 
+            CLIENT_SECRET, 
+            VERSION, 
+            lat, 
+            lng, 
+            radius, 
+            LIMIT)
+            
+        # make the GET request
+        results = requests.get(url).json()["response"]['groups'][0]['items']
+        
+        # return only relevant information for each nearby venue
+        venues_list.append([(
+            name, 
+            lat, 
+            lng, 
+            v['venue']['name'], 
+            v['venue']['location']['lat'], 
+            v['venue']['location']['lng'],  
+            v['venue']['categories'][0]['name']) for v in results])
+
+    nearby_venues = pd.DataFrame([item for venue_list in venues_list for item in venue_list])
+    nearby_venues.columns = ['Neighborhood', 
+                  'Neighborhood Latitude', 
+                  'Neighborhood Longitude', 
+                  'Venue', 
+                  'Venue Latitude', 
+                  'Venue Longitude', 
+                  'Venue Category']
+    
+    return(nearby_venues)
+----
+
+
++*In[72]:*+
+[source, ipython3]
+----
+toronto_venues = getNearbyVenues(names=df_torlatlong['Borough'],
+                                   latitudes=df_torlatlong['Latitude'],
+                                   longitudes=df_torlatlong['Longitude']
+                                  )
+----
+
+
++*Out[72]:*+
+----
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+Scarborough
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+North York
+East York
+East York
+East Toronto
+East York
+East York
+East York
+East Toronto
+East Toronto
+East Toronto
+Central Toronto
+Central Toronto
+Central Toronto
+Central Toronto
+Central Toronto
+Central Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+North York
+Central Toronto
+Central Toronto
+Central Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+Downtown Toronto
+North York
+North York
+York
+York
+Downtown Toronto
+West Toronto
+West Toronto
+West Toronto
+North York
+York
+York
+West Toronto
+West Toronto
+West Toronto
+Downtown Toronto
+Mississauga
+East Toronto
+Etobicoke
+Etobicoke
+Etobicoke
+Etobicoke
+Etobicoke
+Queen's Park
+Etobicoke
+Etobicoke
+North York
+North York
+York
+Etobicoke
+Etobicoke
+Etobicoke
+Etobicoke
+----
+
+
++*In[94]:*+
+[source, ipython3]
+----
+toronto_venues.head()
+----
+
+
++*Out[94]:*+
+----
+[cols=",,,,,,,",options="header",]
+|=======================================================================
+| |Neighborhood |Neighborhood Latitude |Neighborhood Longitude |Venue
+|Venue Latitude |Venue Longitude |Venue Category
+|0 |Scarborough |43.806686 |-79.194353 |Wendy's |43.807448 |-79.199056
+|Fast Food Restaurant
+
+|1 |Scarborough |43.784535 |-79.160497 |Royal Canadian Legion |43.782533
+|-79.163085 |Bar
+
+|2 |Scarborough |43.784535 |-79.160497 |Scarborough Historical Society
+|43.788755 |-79.162438 |History Museum
+
+|3 |Scarborough |43.763573 |-79.188711 |G & G Electronics |43.765309
+|-79.191537 |Electronics Store
+
+|4 |Scarborough |43.763573 |-79.188711 |Marina Spa |43.766000
+|-79.191000 |Spa
+|=======================================================================
+----
+
+
++*In[95]:*+
+[source, ipython3]
+----
+toronto_venues.groupby('Neighborhood').count()
+----
+
+
++*Out[95]:*+
+----
+Neighborhood Latitude
+
+Neighborhood Longitude
+
+Venue
+
+Venue Latitude
+
+Venue Longitude
+
+Venue Category
+
+Neighborhood
+
+Central Toronto
+
+108
+
+108
+
+108
+
+108
+
+108
+
+108
+
+Downtown Toronto
+
+1309
+
+1309
+
+1309
+
+1309
+
+1309
+
+1309
+
+East Toronto
+
+125
+
+125
+
+125
+
+125
+
+125
+
+125
+
+East York
+
+75
+
+75
+
+75
+
+75
+
+75
+
+75
+
+Etobicoke
+
+75
+
+75
+
+75
+
+75
+
+75
+
+75
+
+Mississauga
+
+13
+
+13
+
+13
+
+13
+
+13
+
+13
+
+North York
+
+243
+
+243
+
+243
+
+243
+
+243
+
+243
+
+Scarborough
+
+87
+
+87
+
+87
+
+87
+
+87
+
+87
+
+West Toronto
+
+172
+
+172
+
+172
+
+172
+
+172
+
+172
+
+York
+
+18
+
+18
+
+18
+
+18
+
+18
+
+18
+----
+
+
++*In[84]:*+
+[source, ipython3]
+----
+print('There are {} uniques categories.'.format(len(toronto_venues['Venue Category'].unique())))
+----
+
+
++*Out[84]:*+
+----
+There are 265 uniques categories.
+----
+
+==== Grouping data by neighborhood
+
+
++*In[98]:*+
+[source, ipython3]
+----
+# one hot encoding
+toronto_onehot = pd.get_dummies(toronto_venues[['Venue Category']], prefix="", prefix_sep="")
+
+# add neighborhood column back to dataframe
+toronto_onehot['Neighborhood'] = toronto_venues['Neighborhood'] 
+
+# move neighborhood column to the first column
+fixed_columns = [toronto_onehot.columns[-1]] + list(toronto_onehot.columns[:-1])
+toronto_onehot = toronto_onehot[fixed_columns]
+
+toronto_onehot.set_index('Neighborhood', inplace=True)
+toronto_onehot.head()
+----
+
+
++*Out[98]:*+
+----
+Yoga Studio
+
+Accessories Store
+
+Afghan Restaurant
+
+Airport
+
+Airport Food Court
+
+Airport Gate
+
+Airport Lounge
+
+Airport Service
+
+Airport Terminal
+
+American Restaurant
+
+...
+
+Trail
+
+Train Station
+
+Vegetarian / Vegan Restaurant
+
+Video Game Store
+
+Video Store
+
+Vietnamese Restaurant
+
+Warehouse Store
+
+Wine Bar
+
+Wings Joint
+
+Women's Store
+
+Neighborhood
+
+Scarborough
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+...
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+Scarborough
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+...
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+Scarborough
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+...
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+Scarborough
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+...
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+Scarborough
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+...
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+5 rows × 264 columns
+----
+
+
++*In[99]:*+
+[source, ipython3]
+----
+toronto_onehot.shape
+----
+
+
++*Out[99]:*+
+----(2225, 264)----
+
+
++*In[100]:*+
+[source, ipython3]
+----
+toronto_grouped = toronto_onehot.groupby('Neighborhood').mean().reset_index()
+toronto_grouped
+----
+
+
++*Out[100]:*+
+----
+[cols=",,,,,,,,,,,,,,,,,,,,,",options="header",]
+|=======================================================================
+| |Neighborhood |Yoga Studio |Accessories Store |Afghan Restaurant
+|Airport |Airport Food Court |Airport Gate |Airport Lounge |Airport
+Service |Airport Terminal |... |Trail |Train Station |Vegetarian / Vegan
+Restaurant |Video Game Store |Video Store |Vietnamese Restaurant
+|Warehouse Store |Wine Bar |Wings Joint |Women's Store
+|0 |Central Toronto |0.009259 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.009259 |0.000000
+|0.009259 |0.000000 |0.000000 |0.009259 |0.000000 |0.000000 |0.000000
+|0.000000
+
+|1 |Downtown Toronto |0.003820 |0.000000 |0.000764 |0.000764 |0.000764
+|0.000764 |0.001528 |0.001528 |0.001528 |... |0.000764 |0.002292
+|0.011459 |0.001528 |0.000000 |0.003820 |0.000000 |0.006875 |0.001528
+|0.000764
+
+|2 |East Toronto |0.024000 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.016000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |0.000000 |0.008000 |0.000000
+|0.000000
+
+|3 |East York |0.013333 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.000000 |0.000000
+|0.000000 |0.000000 |0.013333 |0.000000 |0.013333 |0.000000 |0.000000
+|0.000000
+
+|4 |Etobicoke |0.000000 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.000000 |0.000000
+|0.000000 |0.000000 |0.013333 |0.000000 |0.000000 |0.000000 |0.013333
+|0.000000
+
+|5 |Mississauga |0.000000 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000
+
+|6 |North York |0.000000 |0.004115 |0.000000 |0.004115 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.000000 |0.000000
+|0.000000 |0.004115 |0.004115 |0.008230 |0.000000 |0.000000 |0.004115
+|0.012346
+
+|7 |Scarborough |0.000000 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.011494 |0.000000 |0.000000 |0.000000
+|0.000000
+
+|8 |West Toronto |0.011628 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |... |0.000000 |0.000000
+|0.011628 |0.000000 |0.000000 |0.011628 |0.000000 |0.011628 |0.000000
+|0.000000
+
+|9 |York |0.000000 |0.000000 |0.000000 |0.000000 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |... |0.055556 |0.000000 |0.000000
+|0.000000 |0.000000 |0.000000 |0.000000 |0.000000 |0.000000 |0.055556
+|=======================================================================
+
+10 rows × 265 columns
+----
+
+==== Identify most common venues
+
+
++*In[114]:*+
+[source, ipython3]
+----
+def return_most_common_venues(row, num_top_venues):
+    row_categories = row.iloc[1:]
+    row_categories_sorted = row_categories.sort_values(ascending=False)
+    
+    return row_categories_sorted.index.values[0:num_top_venues]
+
+num_top_venues = 10
+
+indicators = ['st', 'nd', 'rd']
+
+# create columns according to number of top venues
+columns = ['Neighborhood']
+for ind in np.arange(num_top_venues):
+    try:
+        columns.append('{}{} Most Common Venue'.format(ind+1, indicators[ind]))
+    except:
+        columns.append('{}th Most Common Venue'.format(ind+1))
+
+# create a new dataframe
+neighborhoods_venues_sorted = pd.DataFrame(columns=columns)
+neighborhoods_venues_sorted['Neighborhood'] = toronto_grouped['Neighborhood']
+
+for ind in np.arange(toronto_grouped.shape[0]):
+    neighborhoods_venues_sorted.iloc[ind, 1:] = return_most_common_venues(toronto_grouped.iloc[ind, :], num_top_venues)
+
+neighborhoods_venues_sorted.head()
+----
+
+
++*Out[114]:*+
+----
+[cols=",,,,,,,,,,,",options="header",]
+|=======================================================================
+| |Neighborhood |1st Most Common Venue |2nd Most Common Venue |3rd Most
+Common Venue |4th Most Common Venue |5th Most Common Venue |6th Most
+Common Venue |7th Most Common Venue |8th Most Common Venue |9th Most
+Common Venue |10th Most Common Venue
+|0 |Central Toronto |Coffee Shop |Sandwich Place |Café |Park |Pizza
+Place |Sushi Restaurant |Dessert Shop |Restaurant |Clothing Store |Gym
+
+|1 |Downtown Toronto |Coffee Shop |Café |Restaurant |Italian Restaurant
+|Bakery |Hotel |Japanese Restaurant |Bar |Park |Seafood Restaurant
+
+|2 |East Toronto |Greek Restaurant |Coffee Shop |Italian Restaurant
+|Café |Brewery |Ice Cream Shop |Yoga Studio |Park |Restaurant |Sandwich
+Place
+
+|3 |East York |Coffee Shop |Sandwich Place |Pizza Place |Pharmacy |Bank
+|Park |Sporting Goods Shop |Burger Joint |Gym |Pet Store
+
+|4 |Etobicoke |Pizza Place |Sandwich Place |Fast Food Restaurant
+|Pharmacy |Coffee Shop |Liquor Store |Gym |Grocery Store |Pet Store
+|Fried Chicken Joint
+|=======================================================================
+----
+
+==== Cluster Neighborhoods
+
+
++*In[115]:*+
+[source, ipython3]
+----
+# set number of clusters
+kclusters = 5
+
+toronto_grouped_clustering = toronto_grouped.drop('Neighborhood', 1)
+
+# run k-means clustering
+kmeans = KMeans(n_clusters=kclusters, random_state=0).fit(toronto_grouped_clustering)
+
+# check cluster labels generated for each row in the dataframe
+kmeans.labels_[0:10] 
+----
+
+
++*Out[115]:*+
+----array([2, 2, 2, 0, 0, 1, 2, 4, 2, 3])----
+
+
++*In[116]:*+
+[source, ipython3]
+----
+# add clustering labels
+neighborhoods_venues_sorted.insert(0, 'Cluster Labels', kmeans.labels_)
+
+toronto_merged = df_torlatlong
+
+# merge toronto_grouped with toronto_data to add latitude/longitude for each neighborhood
+toronto_merged = toronto_merged.join(neighborhoods_venues_sorted.set_index('Neighborhood'), on='Borough')
+
+toronto_merged.head() # check the last columns!
+----
+
+
++*Out[116]:*+
+----
+[cols=",,,,,,,,,,,,,,,,",options="header",]
+|=======================================================================
+| |Postcode |Borough |Neighbourhood |Latitude |Longitude |Cluster Labels
+|1st Most Common Venue |2nd Most Common Venue |3rd Most Common Venue
+|4th Most Common Venue |5th Most Common Venue |6th Most Common Venue
+|7th Most Common Venue |8th Most Common Venue |9th Most Common Venue
+|10th Most Common Venue
+|0 |M1B |Scarborough |Rouge, Malvern |43.806686 |-79.194353 |4.0 |Bakery
+|Coffee Shop |Chinese Restaurant |Breakfast Spot |Fast Food Restaurant
+|Pizza Place |Indian Restaurant |Pharmacy |Convenience Store |Bank
+
+|1 |M1C |Scarborough |Highland Creek, Rouge Hill, Port Union |43.784535
+|-79.160497 |4.0 |Bakery |Coffee Shop |Chinese Restaurant |Breakfast
+Spot |Fast Food Restaurant |Pizza Place |Indian Restaurant |Pharmacy
+|Convenience Store |Bank
+
+|2 |M1E |Scarborough |Guildwood, Morningside, West Hill |43.763573
+|-79.188711 |4.0 |Bakery |Coffee Shop |Chinese Restaurant |Breakfast
+Spot |Fast Food Restaurant |Pizza Place |Indian Restaurant |Pharmacy
+|Convenience Store |Bank
+
+|3 |M1G |Scarborough |Woburn |43.770992 |-79.216917 |4.0 |Bakery |Coffee
+Shop |Chinese Restaurant |Breakfast Spot |Fast Food Restaurant |Pizza
+Place |Indian Restaurant |Pharmacy |Convenience Store |Bank
+
+|4 |M1H |Scarborough |Cedarbrae |43.773136 |-79.239476 |4.0 |Bakery
+|Coffee Shop |Chinese Restaurant |Breakfast Spot |Fast Food Restaurant
+|Pizza Place |Indian Restaurant |Pharmacy |Convenience Store |Bank
+|=======================================================================
+----
+
+Had to eliminate an unmatched row, and convert the Cluster Labels to
+Integers – they were floats and it was causing issues in the mapping
+process
+
+
++*In[123]:*+
+[source, ipython3]
+----
+toronto_merged.shape
+toronto_merged.dropna(inplace=True)
+----
+
+
++*In[127]:*+
+[source, ipython3]
+----
+toronto_merged['Cluster Labels'] = toronto_merged['Cluster Labels'].astype(int)
+----
+
+
++*In[128]:*+
+[source, ipython3]
+----
+toronto_merged
+----
+
+
++*Out[128]:*+
+----
+[cols=",,,,,,,,,,,,,,,,",options="header",]
+|=======================================================================
+| |Postcode |Borough |Neighbourhood |Latitude |Longitude |Cluster Labels
+|1st Most Common Venue |2nd Most Common Venue |3rd Most Common Venue
+|4th Most Common Venue |5th Most Common Venue |6th Most Common Venue
+|7th Most Common Venue |8th Most Common Venue |9th Most Common Venue
+|10th Most Common Venue
+|0 |M1B |Scarborough |Rouge, Malvern |43.806686 |-79.194353 |4 |Bakery
+|Coffee Shop |Chinese Restaurant |Breakfast Spot |Fast Food Restaurant
+|Pizza Place |Indian Restaurant |Pharmacy |Convenience Store |Bank
+
+|1 |M1C |Scarborough |Highland Creek, Rouge Hill, Port Union |43.784535
+|-79.160497 |4 |Bakery |Coffee Shop |Chinese Restaurant |Breakfast Spot
+|Fast Food Restaurant |Pizza Place |Indian Restaurant |Pharmacy
+|Convenience Store |Bank
+
+|2 |M1E |Scarborough |Guildwood, Morningside, West Hill |43.763573
+|-79.188711 |4 |Bakery |Coffee Shop |Chinese Restaurant |Breakfast Spot
+|Fast Food Restaurant |Pizza Place |Indian Restaurant |Pharmacy
+|Convenience Store |Bank
+
+|3 |M1G |Scarborough |Woburn |43.770992 |-79.216917 |4 |Bakery |Coffee
+Shop |Chinese Restaurant |Breakfast Spot |Fast Food Restaurant |Pizza
+Place |Indian Restaurant |Pharmacy |Convenience Store |Bank
+
+|4 |M1H |Scarborough |Cedarbrae |43.773136 |-79.239476 |4 |Bakery
+|Coffee Shop |Chinese Restaurant |Breakfast Spot |Fast Food Restaurant
+|Pizza Place |Indian Restaurant |Pharmacy |Convenience Store |Bank
+
+|... |... |... |... |... |... |... |... |... |... |... |... |... |...
+|... |... |...
+
+|98 |M9N |York |Weston |43.706876 |-79.518188 |3 |Park |Sandwich Place
+|Grocery Store |Hockey Arena |Field |Fast Food Restaurant |Market
+|Discount Store |Convenience Store |Pizza Place
+
+|99 |M9P |Etobicoke |Westmount |43.696319 |-79.532242 |0 |Pizza Place
+|Sandwich Place |Fast Food Restaurant |Pharmacy |Coffee Shop |Liquor
+Store |Gym |Grocery Store |Pet Store |Fried Chicken Joint
+
+|100 |M9R |Etobicoke |Kingsview Village, Martin Grove Gardens, Richv...
+|43.688905 |-79.554724 |0 |Pizza Place |Sandwich Place |Fast Food
+Restaurant |Pharmacy |Coffee Shop |Liquor Store |Gym |Grocery Store |Pet
+Store |Fried Chicken Joint
+
+|101 |M9V |Etobicoke |Albion Gardens, Beaumond Heights, Humbergate, ...
+|43.739416 |-79.588437 |0 |Pizza Place |Sandwich Place |Fast Food
+Restaurant |Pharmacy |Coffee Shop |Liquor Store |Gym |Grocery Store |Pet
+Store |Fried Chicken Joint
+
+|102 |M9W |Etobicoke |Northwest |43.706748 |-79.594054 |0 |Pizza Place
+|Sandwich Place |Fast Food Restaurant |Pharmacy |Coffee Shop |Liquor
+Store |Gym |Grocery Store |Pet Store |Fried Chicken Joint
+|=======================================================================
+
+102 rows × 16 columns
+----
+
+==== Creating cluster map of Boroughs
+
+
++*In[129]:*+
+[source, ipython3]
+----
+# create map
+map_clusters = folium.Map(location=[latitude, longitude], zoom_start=11)
+
+# set color scheme for the clusters
+x = np.arange(kclusters)
+ys = [i + x + (i*x)**2 for i in range(kclusters)]
+colors_array = cm.rainbow(np.linspace(0, 1, len(ys)))
+rainbow = [colors.rgb2hex(i) for i in colors_array]
+
+# add markers to the map
+markers_colors = []
+for lat, lon, poi, cluster in zip(toronto_merged['Latitude'], toronto_merged['Longitude'], toronto_merged['Borough'], toronto_merged['Cluster Labels']):
+    label = folium.Popup(str(poi) + ' Cluster ' + str(cluster), parse_html=True)
+    folium.CircleMarker(
+        [lat, lon],
+        radius=5,
+        popup=label,
+        color=rainbow[cluster-1],
+        fill=True,
+        fill_color=rainbow[cluster-1],
+        fill_opacity=0.7).add_to(map_clusters)
+       
+map_clusters
+----
+
+
++*Out[129]:*+
+----
+
+----
+
+
++*In[ ]:*+
+[source, ipython3]
+----
+
+----
